@@ -1,0 +1,61 @@
+﻿.custom-scroll-wrapper {
+    width: 400px;
+    height: 400px;
+    overflow: hidden;
+    position: relative;
+}
+.custom-scroll-body {
+    overflow: auto;
+    width: 120%;
+}
+.custom-scroll-body:hover + .scroller-wrapper + .scroller {
+    width: 5px;
+    background: #000;
+    opacity:0.4;
+}
+.scroller-wrapper {
+    width: 15px;
+    height: 1000000px;
+    position: absolute;
+    top: 0px;
+    right: 0px;
+}
+.scroller:active, .scroller:hover {
+    width: 10px;
+    background: #000;
+    opacity:0.7;
+}
+
+.scroller-wrapper:hover + .scroller {
+    width: 5px;
+    background: #000;
+    opacity:0.7;
+}
+.custom-scroll-noselect {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+   user-select: none;
+}
+.scroller {
+    background: #000;
+    position: absolute;
+    height: 100px;
+    top: 0px;
+    right: 0px;
+      -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+   user-select: none;
+   opacity:0;
+}
+.scroller:active {
+}
+
+.scroller.animate {
+    -webkit-transition: all 0.1s ease-in-out;
+  -o-transition: all 0.1s ease-in-out;
+   transition: all 0.1s ease-in-out;
+   -moz-transition: all 0.1s ease-in-out;
+  -ms-transition: all 0.1s ease-in-out;
+}
