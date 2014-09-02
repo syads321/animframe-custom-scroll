@@ -1,4 +1,4 @@
-animframe-custom-scroll
+Animframe Custom Scroll
 =======================
 
 Custom scroll using animframe.
