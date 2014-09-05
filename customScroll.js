@@ -1,15 +1,14 @@
-﻿$.fn.animCustombar = function () {
+$.fn.animCustombar = function () {
     $(this).each(function () {
-        console.log('init')
         var $this = $(this);
-        var target = $this.find(' > .custom-scroll-body');
-        var scroller = $this.find(' > #scroller');
+        var target = $this.find('.custom-scroll-body');
+        var scroller = $this.find('#scroller');
         var scrollerheight = scroller.outerHeight();
         // var scrollbody = $('#custom-scroll-body');
         var scrolbodyheight = target.outerHeight();
-        var mousedown = 'mousedown touchstart';
-        var mouseup = 'mouseup touchend';
-        var mousemove = 'mousemove touchmove';
+        var mousedown = 'mousedown touchstart MSPointerDown';
+        var mouseup = 'mouseup touchend MSPointerMove';
+        var mousemove = 'mousemove touchmove MSPointerUp';
         var scrollWrapper = $this.find('#scroller-wrapper');
         var touch = false;
         var diff, scrollarea;
@@ -40,6 +39,7 @@
             loop();
         };
         var scrollNow = $this.scrollTop();
+        var targetpost = target.offset().top - target.parent().offset().top;
         var scrollThen;
         var dimnow = { 'width': target.width(), 'height': target.height() };
         var dimthen = { 'width': null, 'heigh': null };
@@ -50,46 +50,61 @@
             });
             return height;
         }
-     
-        var counter = 0 
+        var totalnoHeight = function (element) {
+            var height = 0;
+            element.find(' > *').each(function () {
+                height = height +  $(this).outerHeight();
+            });
+            return height;
+        }
+        scroller.css('top', targetpost);
+        var counter = 0;
+        var scrollfirst = false;
+        var targetheight = target.outerHeight() ;
         animLoop(function () {
             scrollarea = target.height() - scrollerheight;
             scrollNow = target.scrollTop();
             dimnow = { 'width': $this.width(), 'height': $this.height() };
             if (scrollNow !== scrollThen) {
                 scrollThen = scrollNow;
-                scrollerheight = (target.outerHeight() / totalHeight(target)) * target.outerHeight();
+                targetheight = target.outerHeight() ;
+                scrollerheight = (targetheight / totalHeight(target)) * targetheight;
                 diff = totalHeight(target) - target.height();
                 if (diff > 0) {
                     scrollarea = target.height() - scrollerheight;
-                    var scrollpost = (scrollarea / diff) * scrollNow;
-                    scroller.css({ 'top': scrollpost, 'height': scrollerheight, 'display': 'block' });
+                    var scrollpost = ((scrollarea / diff) * scrollNow) + targetpost;
+                    if (!touch) {
+                         scroller.css({ 'top': scrollpost, 'height': scrollerheight, 'display': 'block' });
+                    }
+                    scrollfirst = true;
+                    console.log(scrollNow)
                 }
                 else {
-                    console.log(counter)
                     if (counter !== 0) {
                         scroller.hide();
                     }
-                    //scroller.hide();
                 }
-                
+               
             }
             if (dimnow.width !== dimthen.width || dimnow.height !== dimthen.height) {
                 dimthen = dimnow;
-                scrollerheight = (target.outerHeight() / totalHeight(target)) * target.outerHeight();
-                diff = totalHeight(target) - target.height();
-                scrollarea = target.height() - scrollerheight;
+                targetheight = target.outerHeight() ;
+                scrollerheight = (targetheight / totalHeight(target)) * targetheight;
+                diff = totalHeight(target) - targetheight;
+                scrollarea = targetheight - scrollerheight;
                 if (diff > 0) {
                     scroller.css({ 'height': scrollerheight, 'display': 'block' });
                 }
                 else {
-                    console.log(counter)
                     if (counter !== 0) {
                         scroller.hide();
                     }
-                    //scroller.hide();
                 }
                
+            }
+            if (!scrollfirst) {
+                scrollerheight = (target.outerHeight() / totalHeight(target)) * target.outerHeight();
+                scroller.css({ 'height': scrollerheight });
             }
             counter++;
         });
@@ -109,15 +124,17 @@
         $(window).bind(mousemove, function (e) {
             if (touch) {
                 scrollerheight = (target.outerHeight() / totalHeight(target)) * target.outerHeight();
-                scrollarea = target.height() - scrollerheight;
-                diff = totalHeight(target) - target.height();
+                targetheight = target.outerHeight() ;
+                scrollarea = targetheight - scrollerheight;
+                diff = totalHeight(target) - targetheight;
                 var movement = ymove - e.pageY;
                 var scroll = startscroll - movement;
                 var scrollpost = (scrollarea / diff);
-                var top = Math.min(Math.max(startypost - movement, 0), scrollarea);
-                console.log(top / scrollpost)
-                target.scrollTop((top / scrollpost));
-                
+                var scrollerpost = Math.min(Math.max(startypost - movement, 0),   targetheight - scrollerheight);
+                var maxscroll = target[0].scrollHeight - $this[0].clientHeight;
+                var top = scrollerpost * (maxscroll /scrollarea);
+                scroller.css('top',  scrollerpost);
+                target.scrollTop(top);
             }
         });
         $(window).bind(mouseup, function () {
