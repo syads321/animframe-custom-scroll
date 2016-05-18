@@ -1,14 +1,18 @@
-$.fn.animCustombar = function () {
+$.fn.animCustombar = function (options) {
+ 
     $(this).each(function () {
+        var options = options || {};
+        var defaults = { topoffset: 0 };
         var $this = $(this);
+        var settings = $.extend({}, defaults, options);
         var target = $this.find('.custom-scroll-body');
         var scroller = $this.find('#scroller');
         var scrollerheight = scroller.outerHeight();
         // var scrollbody = $('#custom-scroll-body');
         var scrolbodyheight = target.outerHeight();
-        var mousedown = 'mousedown touchstart MSPointerDown';
-        var mouseup = 'mouseup touchend MSPointerMove';
-        var mousemove = 'mousemove touchmove MSPointerUp';
+        var mousedown = 'mousedown.customscroll touchstart.customscroll MSPointerDown.customscroll';
+        var mouseup = 'mouseup.customscroll touchend.customscroll MSPointerMove.customscroll';
+        var mousemove = 'mousemove.customscroll touchmove.customscroll MSPointerUp.customscroll';
         var scrollWrapper = $this.find('#scroller-wrapper');
         var touch = false;
         var diff, scrollarea;
@@ -30,7 +34,10 @@ $.fn.animCustombar = function () {
                     now = now && now > 1E4 ? now : +new Date;
                     var deltaT = now - lastFrame;
                     // do not render frame when deltaT is too high
-                    if (deltaT < 160) {
+                   // console.log(deltaT)
+                    // if (deltaT < 160) {
+                    if ((deltaT < 17) && (deltaT > 0)) {
+                        //console.log(deltaT)
                         running = render(deltaT, now);
                     }
                     lastFrame = now;
@@ -39,7 +46,8 @@ $.fn.animCustombar = function () {
             loop();
         };
         var scrollNow = $this.scrollTop();
-        var targetpost = target.offset().top - target.parent().offset().top;
+        var targetpost = target.offset().top - $this.offset().top;
+        var topoffset = targetpost + settings.topoffset;
         var scrollThen;
         var dimnow = { 'width': target.width(), 'height': target.height() };
         var dimthen = { 'width': null, 'heigh': null };
@@ -60,16 +68,18 @@ $.fn.animCustombar = function () {
         scroller.css('top', targetpost);
         var counter = 0;
         var scrollfirst = false;
-        var targetheight = target.outerHeight() ;
+        var targetheight = target.outerHeight();
+        var scrollareatolerance = 100;
         animLoop(function () {
             scrollarea = target.height() - scrollerheight;
             scrollNow = target.scrollTop();
             dimnow = { 'width': $this.width(), 'height': $this.height() };
             if (scrollNow !== scrollThen) {
                 scrollThen = scrollNow;
-                targetheight = target.outerHeight() ;
-                scrollerheight = (targetheight / totalHeight(target)) * targetheight;
-                diff = totalHeight(target) - target.height();
+                targetheight = target.outerHeight();
+                var sumHeight = totalHeight(target);
+                scrollerheight = (targetheight / sumHeight) * targetheight;
+                diff = sumHeight - target.height();
                 if (diff > 0) {
                     scrollarea = target.height() - scrollerheight;
                     var scrollpost = ((scrollarea / diff) * scrollNow) + targetpost;
@@ -77,7 +87,6 @@ $.fn.animCustombar = function () {
                          scroller.css({ 'top': scrollpost, 'height': scrollerheight, 'display': 'block' });
                     }
                     scrollfirst = true;
-                    console.log(scrollNow)
                 }
                 else {
                     if (counter !== 0) {
@@ -88,9 +97,10 @@ $.fn.animCustombar = function () {
             }
             if (dimnow.width !== dimthen.width || dimnow.height !== dimthen.height) {
                 dimthen = dimnow;
-                targetheight = target.outerHeight() ;
-                scrollerheight = (targetheight / totalHeight(target)) * targetheight;
-                diff = totalHeight(target) - targetheight;
+                targetheight = target.outerHeight();
+                var sumHeight = totalHeight(target);
+                scrollerheight = (targetheight / sumHeight) * targetheight;
+                diff = sumHeight - targetheight;
                 scrollarea = targetheight - scrollerheight;
                 if (diff > 0) {
                     scroller.css({ 'height': scrollerheight, 'display': 'block' });
@@ -103,7 +113,8 @@ $.fn.animCustombar = function () {
                
             }
             if (!scrollfirst) {
-                scrollerheight = (target.outerHeight() / totalHeight(target)) * target.outerHeight();
+                var sumHeight = totalHeight(target);
+                scrollerheight = (target.outerHeight() / sumHeight) * target.outerHeight();
                 scroller.css({ 'height': scrollerheight });
             }
             counter++;
@@ -111,46 +122,43 @@ $.fn.animCustombar = function () {
         var startypost = 0;
         var ymove = 0;
         var startscroll = 0;
+        var toleranceobj = { 'right': scroller.offset().left + scroller.outerWidth() + scrollareatolerance };
         scroller.bind(mousedown, function (e) {
             touch = true;
             startypost = scroller.position().top;
             ymove = e.pageY;
-            console.log(ymove);
             startscroll = target.scrollTop();
             scroller.removeClass('animate');
             target.addClass('custom-scroll-noselect');
-            scrollWrapper.addClass('custom-scroll-noselect');
+            $('body').addClass('custom-scroll-noselect');
+            
         });
         $(window).bind(mousemove, function (e) {
             if (touch) {
-                scrollerheight = (target.outerHeight() / totalHeight(target)) * target.outerHeight();
-                targetheight = target.outerHeight() ;
-                scrollarea = targetheight - scrollerheight;
-                diff = totalHeight(target) - targetheight;
                 var movement = ymove - e.pageY;
-                var scroll = startscroll - movement;
-                var scrollpost = (scrollarea / diff);
-                var scrollerpost = Math.min(Math.max(startypost - movement, 0),   targetheight - scrollerheight);
-                var maxscroll = target[0].scrollHeight - $this[0].clientHeight;
-                var top = scrollerpost * (maxscroll /scrollarea);
-                scroller.css('top',  scrollerpost);
-                target.scrollTop(top);
+                targetheight = target.outerHeight();
+                scrollerheight = (targetheight / totalHeight(target)) * targetheight;
+                var scrollerpost = Math.min(Math.max((startypost - movement), targetpost), (targetheight - scrollerheight) + targetpost);
+                diff = totalHeight(target) - target.height();
+                var adder = (totalHeight(target) - (targetheight - targetpost)) / (scrollarea);
+                scroller.css('top', scrollerpost);
+                target.scrollTop((scrollerpost - targetpost) * adder);
             }
         });
         $(window).bind(mouseup, function () {
             touch = false;
-            target.removeClass('custom-scroll-noselect');
+            $('body').removeClass('custom-scroll-noselect');
             scrollWrapper.addClass('custom-scroll-noselect');
             scroller.addClass('animate');
-        })
-        target.bind('mouseleave.customscroll', function () {
-            touch = false;
+        });
+        
+        $this.bind('mouseleave.customscroll', function (e) {
+           touch = false;
         })
         scrollWrapper.click(function (e) {
             var post = e.pageY - target.offset().top;
             var scrollpost = (scrollarea / diff);
             var top = Math.min(Math.max(post, 0), scrollarea);
-            console.log(post)
             target.scrollTop((top / scrollpost));
         });
 
